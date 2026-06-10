@@ -1,7 +1,15 @@
 const { WebSocketServer } = require('ws');
+const http = require('http');
 
 const PORT = process.env.PORT || 8080;
-const wss = new WebSocketServer({ port: PORT });
+
+// Servidor HTTP para manter o Render acordado
+const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('ok');
+});
+
+const wss = new WebSocketServer({ server });
 
 const clients = new Set();
 
@@ -22,7 +30,6 @@ wss.on('connection', (ws) => {
 
             if (msg.type === 'heartbeat') return;
 
-            // broadcast ping para todos exceto quem mandou
             clients.forEach(peer => {
                 if (peer !== ws && peer.readyState === 1) {
                     peer.send(raw.toString());
@@ -44,4 +51,6 @@ wss.on('connection', (ws) => {
     });
 });
 
-console.log(`Relay rodando na porta ${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Relay rodando na porta ${PORT}`);
+});
